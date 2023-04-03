@@ -28,9 +28,8 @@ class Problem2{
     
 	public static void main(String[] args) throws SQLException {
 		Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/homework3", "root", "kkkk");
-		
 		//generates random departments
-		PreparedStatement department = conn.prepareStatement("insert into Departments values(?, ?)");
+		PreparedStatement department = conn.prepareStatement("INSERT INTO Departments (name, campus) VALUES (?, ?)");
 		for (String dept:Departments) {
             String campus = Campuses[rand.nextInt(Campuses.length)];
             department.setString(1, dept);
@@ -38,22 +37,22 @@ class Problem2{
             department.executeUpdate();
         }
         
-		//generates list of classes with random amount of credits
-		PreparedStatement classes = conn.prepareStatement("insert into Classes values(?, ?)");
+		//generates list of classes with random credits
+		PreparedStatement classes = conn.prepareStatement("INSERT INTO Classes(name, credits) VALUES (?, ?)");
 		for (String courseName:Course_Names) {
             int credits = Credits[rand.nextInt(Credits.length)];
-            PreparedStatement checkCourse = conn.prepareStatement("select name from Classes where (name = ?)");
+            PreparedStatement checkCourse = conn.prepareStatement("SELECT name FROM Classes WHERE name = ?");
             checkCourse.setString(1, courseName);
             ResultSet result = checkCourse.executeQuery();
-            if (!result.next()) { //check if the course name already exists in the table
+            if (!result.next()) { // check if the course name already exists in the table
                 classes.setString(1, courseName);
                 classes.setInt(2, credits);
                 classes.executeUpdate();
             }
         }
 		
-		//generates random list of students with increasing sID #
-		PreparedStatement students = conn.prepareStatement("insert into Students values(?, ?, ?)");
+		//generates random list of students with increasing ID #
+		PreparedStatement students = conn.prepareStatement("INSERT INTO Students (first_name, last_name, id) VALUES (?, ?, ?)");
 		for (int i = 1; i <= NUM_STUDENTS; i++) {
             String firstName = first_names[rand.nextInt(first_names.length)];
             String lastName = last_names[rand.nextInt(last_names.length)];
@@ -66,7 +65,7 @@ class Problem2{
 		
 		
 		//populate majors table
-		PreparedStatement majors = conn.prepareStatement("insert into Majors values(?, ?)");
+		PreparedStatement majors = conn.prepareStatement("INSERT INTO Majors VALUES (?, ?)");
 	    for (int i = 100000001; i <= 100000100; i++) {
 	      int sid = i;
 	      String major = Departments[rand.nextInt(Departments.length)];
@@ -76,8 +75,8 @@ class Problem2{
 	    }
 	    
 		
-	    //populate minors table
-	    PreparedStatement minors = conn.prepareStatement("insert into Minors values(?, ?)");
+	      //populate minors table
+	    PreparedStatement minors = conn.prepareStatement("INSERT INTO Minors VALUES (?, ?)");
 	    for (int i = 100000001; i <= 100000100; i++) {
 		      int sid = i;
 		      String minor = Departments[rand.nextInt(Departments.length)];
@@ -87,20 +86,21 @@ class Problem2{
 		    }
 	    
 	    
-	    //populate isTaking, I use an arraylist to keep track of chosen courses
-	    PreparedStatement isTakingClass = conn.prepareStatement("insert into IsTaking values(?, ?)");
+	    //populate isTaking, i use an arraylist to keep track of chosen courses
+	    PreparedStatement isTakingClass = conn.prepareStatement("INSERT INTO IsTaking(sid, name) VALUES (?, ?)");
+        //populate table for each student
         for (int i = 100000001; i <= 100000100; i++) {
         	ArrayList<String> chosenCourses = new ArrayList<>();
             while (chosenCourses.size() < 3) {
-                //randomly choose a course from the course list
+                //randomly choose course from the Course list
                 String course = Course_Names[rand.nextInt(Course_Names.length)];
 
-                PreparedStatement checkCourse = conn.prepareStatement("select name from Classes where (name = ?)");
+                PreparedStatement checkCourse = conn.prepareStatement("SELECT name FROM Classes WHERE name = ?");
                 checkCourse.setString(1, course);
                 ResultSet result = checkCourse.executeQuery();
                 if (result.next()) {
-                    //check if the course has already been chosen for student
-                    PreparedStatement checkIsTaking = conn.prepareStatement("select * from IsTaking where ((sid = ?) AND (name = ?)");
+                    //check if course has already been chosen for student
+                    PreparedStatement checkIsTaking = conn.prepareStatement("SELECT * FROM IsTaking WHERE sid = ? AND name = ?");
                     checkIsTaking.setInt(1, i);
                     checkIsTaking.setString(2, course);
                     ResultSet result2 = checkIsTaking.executeQuery();
@@ -115,26 +115,27 @@ class Problem2{
             }
         }
         
-	    
         //populate HasTaken field
-        PreparedStatement hasTakenClass = conn.prepareStatement("insert into HasTaken values(?, ?, ?)");
+        PreparedStatement hasTakenClass = conn.prepareStatement("INSERT INTO HasTaken(sid, name, grade) VALUES (?, ?, ?)");
+        //populate table for each student
         for (int i = 100000001; i <= 100000100; i++) {
         	ArrayList<String> chosenCourses = new ArrayList<>();
-            while (chosenCourses.size() < 3) {
-                //randomly choose course from course list
+        	int numCourses = rand.nextInt(35) + 1;
+        	while (chosenCourses.size() < numCourses) {
+                //randomly choose course from Course list
                 String course = Course_Names[rand.nextInt(Course_Names.length)];
                 String grade = Grades[rand.nextInt(Grades.length)];
-                PreparedStatement checkCourse = conn.prepareStatement("select name from Classes where (name = ?)");
+                PreparedStatement checkCourse = conn.prepareStatement("SELECT name FROM Classes WHERE name = ?");
                 checkCourse.setString(1, course);
                 ResultSet result = checkCourse.executeQuery();
                 if (result.next()) {
                     //check if course has already been chosen for student
-                    PreparedStatement checkIsTaking = conn.prepareStatement("select * from HasTaken where ((sid = ?) AND (name = ?)");
+                    PreparedStatement checkIsTaking = conn.prepareStatement("SELECT * FROM HasTaken WHERE sid = ? AND name = ?");
                     checkIsTaking.setInt(1, i);
                     checkIsTaking.setString(2, course);
                     ResultSet result2 = checkIsTaking.executeQuery();
                     if (!result2.next()) {
-                        //insert ID and course name into HasTaken table
+                        //insert student ID and course name into IsTaking table
                     	hasTakenClass.setInt(1, i);
                     	hasTakenClass.setString(2, course);
                     	hasTakenClass.setString(3, grade);
@@ -144,19 +145,17 @@ class Problem2{
                 }
             }
         }
-        
-
-        //warning section
 	    SQLWarning warning_majors = majors.getWarnings();
 	    SQLWarning warning_minors = minors.getWarnings();
 	    SQLWarning warning_students = students.getWarnings();
 		SQLWarning warning_classes = classes.getWarnings();
 		SQLWarning warning_department = department.getWarnings();
         SQLWarning warning_isTaken = isTakingClass.getWarnings();
+        
         SQLWarning warning_hasTaken = hasTakenClass.getWarnings();
 		
         
-		while((warning_students != null) & (warning_classes != null) & (warning_department != null) & (warning_majors != null) & (warning_minors != null) & (warning_isTaken != null) & (warning_isTaken != null)){
+		while((warning_students != null) & (warning_classes != null) & (warning_department != null) & (warning_majors != null) & (warning_minors != null) & (warning_isTaken != null) & (warning_isTaken != null) & (warning_hasTaken != null)){
 			warning_students = warning_students.getNextWarning();
 			warning_classes = warning_classes.getNextWarning();
 			warning_department = warning_department.getNextWarning();
